@@ -83,7 +83,7 @@ plt.imshow(convolved)
 plt.show() """
 
 
-exter_masks = np.array([[[0,0], [0, 1]],
+""" exter_masks = np.array([[[0,0], [0, 1]],
                         [[0, 0], [1, 0]],
                         [[0, 1], [0, 0]],
                         [[1, 0], [0, 0]]])
@@ -123,4 +123,4 @@ plt.imshow(image[:,:,1])
 plt.subplot(133)
 plt.imshow(image[:,:,2])
 plt.imshow(image)
-plt.show()
+plt.show() """
