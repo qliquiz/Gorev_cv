@@ -2,30 +2,59 @@ import mss
 import cv2
 import numpy as np
 import pyautogui
+import time
 
-def capture_screen(monitor):
+
+def grab_screen(region=None):
     with mss.mss() as sct:
-        return np.array(sct.grab(monitor))
+        monitor = sct.monitors[1]
+        if region:
+            monitor['top'] = region['top']
+            monitor['left'] = region['left']
+            monitor['width'] = region['width']
+            monitor['height'] = region['height']
+        img = np.array(sct.grab(monitor))
+        return img[:, :, :3]
 
 def detect_obstacles(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
     _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    return contours
 
-def main():
-    monitor = {"top": 400, "left": 400, "width": 600, "height": 150}  # Область захвата экрана
+    obstacles = []
+    for cnt in contours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        if w > 10 and h > 10:
+            obstacles.append((x, y, w, h))
+    return obstacles
 
-    while True:
-        screen = capture_screen(monitor)
-        obstacles = detect_obstacles(screen)
+def jump():
+    pyautogui.press('space')
 
-        for obstacle in obstacles:
-            x, y, w, h = cv2.boundingRect(obstacle)
-            if h > 50:  # Если препятствие достаточно высокое, прыгаем
-                pyautogui.press('space')
-            elif w > 50:  # Если препятствие широкое, пригибаемся
-                pyautogui.press('down')
+def duck():
+    pyautogui.keyDown('down')
+    time.sleep(0.05)
+    pyautogui.keyUp('down')
 
-if __name__ == "__main__":
-    main()
+region = {'top': 280, 'left': 600, 'width': 600, 'height': 30}
+
+while True:
+    screen = grab_screen(region)
+    obstacles = detect_obstacles(screen)
+    
+    if obstacles:
+        obstacle = obstacles[0]
+        x, y, w, h = obstacle
+
+        # print(obstacle)
+        
+        if x < 250 and w != 1200:
+            jump()
+    
+    # cv2.rectangle(np.array(screen), (obstacle[0], obstacle[1]), (obstacle[0] + obstacle[2], obstacle[1] + obstacle[3]), (0, 255, 0), 2)
+    # cv2.imshow('screen', screen)
+    # if cv2.waitKey(25) & 0xFF == ord('q'):
+    #     cv2.destroyAllWindows()
+    #     break
