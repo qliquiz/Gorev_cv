@@ -1,27 +1,8 @@
 # ping 192.168.0.111
-from skimage.measure import label, regionprops
-from collections import defaultdict
 import cv2
 import zmq #pip install pyzmq
 import numpy as np
-
-
-def get_shapes(regions):
-    shapes = defaultdict(lambda: 0)
-
-    for index, region in enumerate(regions):
-        key = ''
-        eccent = region.eccentricity
-
-        if eccent == 0:
-            if (region.image.size == region.area):
-                key = 'square'
-            else:
-                key = 'circle'
-
-        shapes[key] += 1
-
-    return shapes
+import math
 
 
 cv2.namedWindow("Image", cv2.WINDOW_GUI_NORMAL)
@@ -56,16 +37,27 @@ while True:
         if hierarchy[0][i][3] == -1:
             cv2.drawContours(image, cnts, i, (0, 255, 0), 10)
 
+    circles = 0
+    squares = 0
+
+    for c in cnts:
+        (curr_x, curr_y), r = cv2.minEnclosingCircle(c)
+        area = cv2.contourArea(c)
+        circleArea = math.pi * r ** 2
+        
+        if area <= 6650:
+            continue
+
+        if area / circleArea  >= 0.9:
+            circles += 1
+        else:
+            squares += 1
+
     key = cv2.waitKey(10)
     if key == ord("q"):
         break
-
-    bin_image = np.mean(image,2)
-    bin_image[bin_image > 0] = 1
-    labeled = label(bin_image)
-    regions = regionprops(labeled)
-    shapes = get_shapes(regions)
-    cv2.putText(image, f"Circles = {shapes['circle']}, Squares = {shapes['square']}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (127, 255, 255))
+    
+    cv2.putText(image, f"Circles = {circles}, Squares = {squares}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (127, 255, 255))
     cv2.imshow("Image", image)
     cv2.imshow("Mask", confuse)
     # cv2.imshow("Mask", ((segments / segments.max()) * 255).astype('uint8'))
