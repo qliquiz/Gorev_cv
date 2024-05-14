@@ -34,9 +34,7 @@ cv2.createTrackbar("Upper", "Mask", upper, 255, upper_update)
 
 
 while True:
-    bts = socket.recv()
-    arr = np.frombuffer(bts, np.uint8)
-    image = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    image = cv2.imread("a4/a4.jpg")
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (7, 7), 0)
@@ -48,27 +46,23 @@ while True:
     approx = cv2.approxPolyDP(cnts[0], eps, True)
     for p in approx:
         cv2.circle(image, tuple(*p), 6, (0, 255, 0), 2)
-    
-    rect = cv2.minAreaRect(cnts[0])
-    box = cv2.boxPoints(rect)
-    box = np.intp(box)
-    cv2.drawContours(image, [box], 0, (0, 255, 0), 2)
 
-    pts_bg = np.float32([[19, 25], [41, 296], [433, 56], [435, 269]])
-    boxcont = []
-    for i in box:
-        boxcont.append(i)
-    pts_fg = np.float32([box[0], box[1], box[2], box[3]])
+    shape = np.float32([[640, 0], [0, 0], [0, 640], [640, 877]])
+    mask = cv2.getPerspectiveTransform(approx[:, 0, :].astype("float32"), shape)
+    paper = cv2.warpPerspective(image, mask, (640, 480))
 
-    M = cv2.getPerspectiveTransform(pts_fg, pts_bg)
+    cv2.putText(paper, "Hello world", (90, 60), cv2.FONT_HERSHEY_SIMPLEX, 2, (127, 255, 255), 4)
 
-    cv2.imshow("Image", image)
-    # cv2.imshow("Mask", mask)
+    mask = cv2.getPerspectiveTransform(shape, approx[:, 0, :].astype("float32"))
+    text = cv2.warpPerspective(paper, mask, (640, 480))
+    text[np.all(text < 150, axis=2)] = image[np.all(text < 150, axis=2)]
+
+    # cv2.imshow("Image", image)
+    cv2.imshow("Text", text)
 
     key = cv2.waitKey(10)
     if key == ord("q"):
         break
-    if key == ord('p'):
-        cv2.imwrite('screenshot.jpg', image)
+
 
 cv2.destroyAllWindows()
