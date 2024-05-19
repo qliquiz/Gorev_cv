@@ -5,7 +5,7 @@ from time import sleep, time
 import pyautogui as inp
 from skimage.morphology import closing, disk
 
-dino_img = cv.imread("t-rex.png")
+dino_img = cv.imread("t-rex/t-rex.png")
 dino_img = cv.cvtColor(dino_img, cv.COLOR_RGB2GRAY)
 
 sleep(3)
